@@ -1,0 +1,80 @@
+function tpr() {
+	for d in k*/results.json; do t=`cat $d | json_pp | grep "tp" | awk -F':' '{print $2}' | perl -pe 's,[ \,],,g'`; b=`echo $d | awk -F'/' '{print $1}'`; echo -e "$b \t $t"; done
+}
+
+function topn () 
+{ 
+    for d in k*/results.json;
+    do
+        t=`cat $d | jq '.test | .topn'`;
+        b=`echo $d | awk -F'/' '{print $1}'`;
+        echo -e "$b \t $t";
+    done
+}
+
+
+function lls() {
+	ls `pwd`/$@
+}
+
+
+function getGettyKeywords() {
+
+	echo "Downloading result pages for each assetID in $@"
+	for fid in `cat "$@" | tr -d "\r"`; 
+	do 
+	   out=result-$fid.html; 
+	   wget -a download.log -O $out https://www.gettyimages.com/photos/$fid; 
+	   echo $fid done; 
+	done
+
+	echo "Downloading asset pages now"
+	for fid in `cat "$@" | tr -d "\r"`; 
+	do 
+	   in=result-$fid.html; 
+	   lnk=$(cat $in | pup '[class="search-result-asset-link"] attr{href}' | grep $fid | tr -d "\r"); 
+	   if [[ -n "${lnk// }" ]]; 
+	   then 
+		wget -a download.log -O photo-$fid.html "https://www.gettyimages.com$lnk"; 
+		echo "Downloaded https://www.gettyimages.com$lnk to photo-$fid.html"; 
+	   else 
+		echo "Skipping $fid ..."; 
+	   fi; 
+	done
+
+	echo "Extracting title, description, and keywords for each asset"
+	for fid in `cat "$@" | tr -d "\r"`; 
+	do 
+	   in=photo-$fid.html; 
+	   if [ -e $in ]; 
+	   then 
+		title=$(cat $in | pup -p '[class="asset-title"] text{}' | tr -d "\r"); 
+		caption=$(cat $in | pup -p '[class="asset-caption"] text{}' | tr -d "\r"); 
+		if [[ -n "${title// }" ]]; 
+		then 
+		    echo $title > $fid.title; 
+		else 
+		    echo "No title for $fid ..."; 
+		fi; 
+		if [[ -n "${caption// }" ]]; 
+		then 
+		    echo $caption > $fid.caption; 
+		else 
+		    echo "No caption for $fid ..."; 
+		fi; 
+		cat $in | pup -p '[class="keyword"] text{}' | tr -d "\r" > $fid.keywords; 
+		echo "... $fid done"; 
+	   else 
+		echo "Skipping $fid"; 
+	   fi; 
+	done
+}
+
+function e() {
+        export input="$@"
+	if [[ -n "${input// }" ]];
+	then
+        	local ans=$(perl -e 'BEGIN{$args=$ENV{"input"};}{$_= eval $args; print "$_\n"}')
+		echo "$input = $ans"
+	fi;
+}
