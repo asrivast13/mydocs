@@ -1,0 +1,101 @@
+###loops with lots of for and if statements
+function getGettyKeywords() {
+
+        echo "Downloading result pages for each assetID in $@"
+        for fid in `cat "$@" | tr -d "\r"`; 
+        do 
+           out=result-$fid.html; 
+           wget -a download.log -O $out https://www.gettyimages.com/photos/$fid; 
+           echo $fid done; 
+        done
+
+        echo "Downloading asset pages now"
+        for fid in `cat "$@" | tr -d "\r"`; 
+        do 
+           in=result-$fid.html; 
+           lnk=$(cat $in | pup '[class="search-result-asset-link"] attr{href}' | grep $fid | tr -d "\r"); 
+           if [[ -n "${lnk// }" ]]; 
+           then 
+                wget -a download.log -O photo-$fid.html "https://www.gettyimages.com$lnk"; 
+                echo "Downloaded https://www.gettyimages.com$lnk to photo-$fid.html"; 
+           else 
+                echo "Skipping $fid ..."; 
+           fi; 
+        done
+
+        echo "Extracting title, description, and keywords for each asset"
+        for fid in `cat "$@" | tr -d "\r"`; 
+        do 
+           in=photo-$fid.html; 
+           if [ -e $in ]; 
+           then 
+                title=$(cat $in | pup -p '[class="asset-title"] text{}' | tr -d "\r"); 
+                caption=$(cat $in | pup -p '[class="asset-caption"] text{}' | tr -d "\r"); 
+                if [[ -n "${title// }" ]]; 
+                then 
+                    echo $title > $fid.title; 
+                else 
+                    echo "No title for $fid ..."; 
+                fi; 
+                if [[ -n "${caption// }" ]]; 
+                then 
+                    echo $caption > $fid.caption; 
+                else 
+                    echo "No caption for $fid ..."; 
+                fi; 
+                cat $in | pup -p '[class="keyword"] text{}' | tr -d "\r" > $fid.keywords; 
+                echo "... $fid done"; 
+           else 
+                echo "Skipping $fid"; 
+           fi; 
+        done
+}
+
+## passing environment variables into perl
+function e() {
+        export input="$@"
+        if [[ -n "${input// }" ]];
+        then
+                local ans=$(perl -e 'BEGIN{$args=$ENV{"input"};}{$_= eval $args; print "$_\n"}')
+                echo "$input = $ans"
+        fi;
+}
+
+## reading from file while preserving tabs and also writing out tabs into output file
+cat test_no_duplicates.txt | \ 
+while read -r line; \
+do \
+    title=$(echo "$line" | awk -F'\t' '{print $1}' | tr -d "\r"); \
+    id=$(echo "$line" | awk -F'\t' '{print $2}' | tr -d "\r"); \
+    file=$(\ls ../../../../images/*$id*.jpg); \
+    fb=$(basename $file); \
+    echo -e "$id\t$fb\t$title"; \
+done | \
+tr -d "\r" > foo
+
+## splitting set of tokens in perl and uniquing the set before printing out
+## cat train_tags_from_abhisaar.txt | tr -d "\r" | perl -ne 'BEGIN{sub uniq {my %seen; grep !$seen{$_}++, @_;}} {chomp; ($epi, $tags) = split/\t/; $epi=~ s/\s+/\-/g; $epi=~/^GettyImages\-([^\_]+).*\.jpg/; $id=$1; foreach $tag(uniq(split /\,/, (lc $tags))){ print "$tag\t$id\tTrue\n";}}' | tr -d "\r" > train.txt
+cat train_tags_from_abhisaar.txt | \
+tr -d "\r" | \
+perl -ne \
+'BEGIN \
+    { \
+        sub uniq \
+            { \
+                my %seen; \
+                grep !$seen{$_}++, @_; \
+            } \
+    } \
+{ \
+    chomp; \
+    ($epi, $tags) = split/\t/; \
+    $epi=~ s/\s+/\-/g; \
+    $epi=~/^GettyImages\-([^\_]+).*\.jpg/; \
+    $id=$1; \
+    foreach $tag(uniq(split /\,/, (lc $tags))) \
+    { \
+        print "$tag\t$id\tTrue\n"; \
+    } \
+}' \
+| tr -d "\r" > train.txt
+
