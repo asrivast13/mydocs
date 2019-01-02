@@ -1,0 +1,25 @@
+alias hex2dec  perl -e '\'$_ = ($#ARGV==0) ? shift : <>; chomp; print hex("$_"), "\n";\''
+alias hex2char perl -e '\'$_ = ($#ARGV==0) ? shift : <>; chomp; printf "%c\n", hex("$_");\''
+alias char2dec perl -e '\'$_ = ($#ARGV==0) ? shift : <>; chomp; print ord("$_"), "\n";\''
+alias char2hex perl -e '\'$_ = ($#ARGV==0) ? shift : <>; chomp; my $n = ord("$_"); printf "%x\n", $n;\''
+alias dec2hex  perl -e '\'$_ = ($#ARGV==0) ? shift : <>; chomp; printf "%x\n", $_;\''
+alias dec2char perl -e '\'$_ = ($#ARGV==0) ? shift : <>; chomp; printf "%c\n", $_;\''
+
+alias char2oct perl -e '\'$_ = ($#ARGV==0) ? shift : <>; chomp; $h = ord("$_"); printf "%lo\n", $h;\''
+alias hex2oct  perl -e '\'$_ = ($#ARGV==0) ? shift : <>; chomp; $h = hex("$_"); printf "%lo\n", $h;\''
+alias dec2oct  perl -e '\'$_ = ($#ARGV==0) ? shift : <>; chomp; printf "%lo\n", $_;\''
+alias oct2dec  perl -e '\'$_ = ($#ARGV==0) ? shift : <>; chomp; print oct("$_"), "\n";\''
+alias oct2hex  perl -e '\'$_ = ($#ARGV==0) ? shift : <>; chomp; $d = oct("$_"); printf "%x\n", $d;\''
+alias oct2char perl -e '\'$_ = ($#ARGV==0) ? shift : <>; chomp; $d = oct("$_"); printf "%c\n", $d;\''
+
+alias dec2u8   perl -e '\'use BBN::Unicode; use bytes; $_ = ($#ARGV==0) ? shift : <>; chomp; $u = unicode_to_utf8($_); print "$u\n";\''
+alias dec2u8hex perl -e '\'use BBN::Unicode; use bytes; $_ = ($#ARGV==0) ? shift : <>; chomp; $u = unicode_to_utf8($_); my $len = length($u); my @dec = unpack "C$len", $u; my $x = "0x"; foreach my $dec(@dec) { $x .= sprintf "%x", $dec; }  print "$x\n";\''
+
+alias u82charhex perl -e '\'use BBN::Unicode; use bytes; $_ = ($#ARGV==0) ? shift : <>; chomp; $u = $_; my $u8len = utf8_strlen($u); my $x = ""; for (my $i=0; $i<$u8len; $i++) {my $xchar = utf8_substr($u, $i, 1); my $uni = utf8_to_unicode($xchar); $x .= "$uni ";} print "$x\n";\''
+
+alias u8hex2u8 perl -e '\'use bytes; $_ = ($#ARGV==0) ? shift : <>; chomp; $x = $_; $x =~ s/^(0x|x)//; $x =~ s/[<>]//g; my @h = split //, $x; my @char = (); while($#h >= 0){ my @b = ($#h > 0) ? splice @h, -2 : splice @h, -1; my $c = join "", @b; unshift @char, hex($c);} my $len = scalar @char; my $u8 = pack "C$len", @char; print "$u8\n";\''
+alias spd 'xml sel -T -t -m "sessions/session/tokens/fragment_set/speech_fragment" -v "@fragment_duration" -n \!* | stats'
+alias nspd 'xml sel -T -t -m "sessions/session/tokens/fragment_set/nonspeech_fragment" -v "@fragment_duration" -n \!* | stats'
+alias splx 'xml sel -T -t -m "sessions/session/tokens/fragment_set/speech_fragment/token" -v "@token_type" -n \!* | grep "lexeme" | wc'
+alias mtlx 'xml sel -T -t -m "sessions/session/tokens/fragment_set/speech_mt_fragment/mt_token" -v "@token_type" -n \!* | grep "lexeme" | wc'
+
