@@ -1,3 +1,5 @@
+alias gits='git status'
+
 function tpr() {
 	for d in k*/results.json; do t=`cat $d | json_pp | grep "tp" | awk -F':' '{print $2}' | perl -pe 's,[ \,],,g'`; b=`echo $d | awk -F'/' '{print $1}'`; echo -e "$b \t $t"; done
 }
