@@ -1,0 +1,5 @@
+## Multi-label Text Classification with Keras
+https://blog.mimacom.com/text-classification/
+https://www.kaggle.com/kernels/scriptcontent/4674042/download
+https://www.kaggle.com/roccoli/multi-label-classification-with-keras/notebook
+

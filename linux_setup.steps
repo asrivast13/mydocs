@@ -83,3 +83,5 @@ bazel build --config=opt --config=cuda --config=mkl //tensorflow/tools/pip_packa
 bazel-bin/tensorflow/tools/pip_package/build_pip_package tensorflow_pkg
 cd tensorflow_pkg/; pip install tensorflow-1.12.0-cp35-cp35m-linux_x86_64.whl
 
+## Set the appropriate permissions on home directory to enable remote login through password-less ssh
+chmod go-w ~/
