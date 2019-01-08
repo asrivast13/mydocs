@@ -3,3 +3,7 @@ https://blog.mimacom.com/text-classification/
 https://www.kaggle.com/kernels/scriptcontent/4674042/download
 https://www.kaggle.com/roccoli/multi-label-classification-with-keras/notebook
 
+## Build tensorflow with GPU support for CUDA 10 on Ubuntu 18.04
+https://medium.com/@vitali.usau/install-cuda-10-0-cudnn-7-3-and-build-tensorflow-gpu-from-source-on-ubuntu-18-04-3daf720b83fe
+https://www.pytorials.com/how-to-install-tensorflow-gpu-with-cuda-10-0-for-python-on-ubuntu/
+
