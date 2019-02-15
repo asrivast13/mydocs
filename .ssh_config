@@ -1,0 +1,7 @@
+Host gpu
+Hostname amitdesktop2.corp.microsoft.com
+Port 22
+User amisriv
+ForwardAgent yes
+ForwardX11 yes
+ServerAliveInterval 60
