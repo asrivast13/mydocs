@@ -118,3 +118,7 @@ do
 		echo -e "$fb\t20.00"; 
 	fi; 
 done
+
+## XML parsing with namespaces and converting SVG to PNG
+for svg in *.svg; do size=$(xml sel -N x="http://www.w3.org/2000/svg" -T -t -m "x:svg" -v "@viewBox" $svg | awk '{print $(NF)}'); factor="0.25x"; if [ "$size" -lt "512" ]; then factor="1.0x"; fi; fb=$(echo -e $svg | perl -pe 's, ,_,; s,\.svg,,;'); png=$(echo -e $svg | perl -pe 's,\.svg,\.png,'); echo -e "$fb\t$size\t$factor" >> ../PNG/convert.log; svgexport "$svg" "../PNG/$png" "$factor" >> ../PNG/convert.log; echo -e "$fb\t$size\t$factor"; done
+

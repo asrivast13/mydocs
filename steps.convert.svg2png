@@ -4,4 +4,4 @@ sudo apt install npm
 sudo npm install svgexport -g
 cd ../data/FabricSetA/SVG/
 mkdir ../PNG/
-for svg in *.svg; do fb=$(echo -e $svg | perl -pe 's, ,_,; s,\.svg,,;'); png=$(echo -e $svg | perl -pe 's,\.svg,\.png,'); svgexport "$svg" "../PNG/$png" >> convert.log; echo $fb done; done
+for svg in *.svg; do fb=$(echo -e $svg | perl -pe 's, ,_,; s,\.svg,,;'); png=$(echo -e $svg | perl -pe 's,\.svg,\.png,'); svgexport "$svg" "../PNG/$png" 256:256 >> convert.log; echo $fb done; done
