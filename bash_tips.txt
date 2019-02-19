@@ -99,3 +99,26 @@ perl -ne \
 }' \
 | tr -d "\r" > train.txt
 
+## Example of basename, pattern-matching, as well as if-then-elif-then-else-fi
+for f in `find ./ -iname "*.wav" -print | tr -d "\r"`; 
+do 
+	fb=$(basename -s ".wav" $f); 
+	sox $f -r 16000 -t wav ../test/$fb.wav; 
+	sox ../test/$fb.wav -t sph ../test/$fb.sph; 
+
+	if [[ $fb =~ "_sn0" ]]; then 
+		echo -e "$fb\t0.00"; 
+	elif [[ $fb =~ "_sn5" ]]; then 
+		echo -e "$fb\t5.00"; 
+	elif [[ $fb =~ "_sn10" ]]; then 
+		echo -e "$fb\t10.00"; 
+	elif [[ $fb =~ "_sn15" ]]; then 
+		echo -e "$fb\t15.00"; 
+	else 
+		echo -e "$fb\t20.00"; 
+	fi; 
+done
+
+## XML parsing with namespaces and converting SVG to PNG
+for svg in *.svg; do size=$(xml sel -N x="http://www.w3.org/2000/svg" -T -t -m "x:svg" -v "@viewBox" $svg | awk '{print $(NF)}'); factor="0.25x"; if [ "$size" -lt "512" ]; then factor="1.0x"; fi; fb=$(echo -e $svg | perl -pe 's, ,_,; s,\.svg,,;'); png=$(echo -e $svg | perl -pe 's,\.svg,\.png,'); echo -e "$fb\t$size\t$factor" >> ../PNG/convert.log; svgexport "$svg" "../PNG/$png" "$factor" >> ../PNG/convert.log; echo -e "$fb\t$size\t$factor"; done
+

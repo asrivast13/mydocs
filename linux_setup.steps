@@ -85,3 +85,17 @@ cd tensorflow_pkg/; pip install tensorflow-1.12.0-cp35-cp35m-linux_x86_64.whl
 
 ## Set the appropriate permissions on home directory to enable remote login through password-less ssh
 chmod go-w ~/
+
+# upgrade pip and install ML packages
+pip install --upgrade pip
+pip install -U --user sklearn gensim pandas
+
+## some frequently needed packages
+## This was needed for SCTK
+sudo apt install libc6-dev-i386
+## dos2unix utility
+sudo apt install dos2unix
+## Node.js package manager
+sudo apt install npm
+## XML Starlet
+sudo snap install xmlstarlet
