@@ -111,6 +111,8 @@ alias www='python -m SimpleHTTPServer 8000'
 # needed to know your external IP address
 alias ipe='curl ipinfo.io/ip'
 # Need to know your local IP address
-alias ipi='ipconfig getifaddr en0'
+alias ipi='ifconfig getifaddr eth0'
 # clear the screen
 alias c='clear'
+# rsync between computers
+alias rs='rsync -ravz -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --progress'
