@@ -116,3 +116,6 @@ alias ipi='ifconfig getifaddr eth0'
 alias c='clear'
 # rsync between computers
 alias rs='rsync -ravz -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --progress'
+
+#Kill process by name
+alias kn='pkill -f'

@@ -99,3 +99,8 @@ sudo apt install dos2unix
 sudo apt install npm
 ## XML Starlet
 sudo snap install xmlstarlet
+
+##Install Python 3.5 development libraries (default on 18.04 is libpython3.6)
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt-get install python3.5-dev
+

@@ -19,6 +19,8 @@ function lls() {
 	ls `pwd`/$@
 }
 
+alias fls=lls
+
 
 function getGettyKeywords() {
 
