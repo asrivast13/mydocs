@@ -95,6 +95,19 @@ alias python=python3
 alias pip=pip3
 alias p='python -u -W ignore '
 
+function spp() {
+  local input="$@"
+  if [[ -n "${input// }" ]]; then
+     export PYTHONPATH=$input${PYTHONPATH:+:${PYTHONPATH}}
+  else
+     export PYTHONPATH=`pwd`${PYTHONPATH:+:${PYTHONPATH}}
+  fi
+  echo "PYTHONPATH=$PYTHONPATH"
+}
+
+alias epp='echo PYTHONPATH=$PYTHONPATH'
+alias upp='unset PYTHONPATH'
+
 ## Top-10 aliases from open-source
 # unpack a .tar file
 alias untar='tar -zxvf '
