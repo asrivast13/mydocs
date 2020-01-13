@@ -21,6 +21,8 @@ alias now='date +"%T"'
 alias nowtime=now
 alias nowdate='date +"%d-%m-%Y"'
 alias fastping='ping -c 100 -s.2'
+alias pk='pkill'
+alias pg='pgrep -a'
 
 ## pass options to free ##
 alias meminfo='free -m -l -t'
@@ -132,3 +134,9 @@ alias rs='rsync -ravz -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=
 
 #Kill process by name
 alias kn='pkill -f'
+alias k9='kill -9'
+
+#set term to rxvt to enable proper cursor movement in emacs
+alias emm='export TERM=rxvt'
+alias umm='export TERM=xterm-color' 
+alias ew='\emacs -nw'
