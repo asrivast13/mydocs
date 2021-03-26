@@ -23,6 +23,10 @@ alias nowdate='date +"%d-%m-%Y"'
 alias fastping='ping -c 100 -s.2'
 alias pk='pkill'
 alias pg='pgrep -a'
+alias xml=xmlstarlet
+alias val='xml val -e'
+alias xv=val
+alias xmlval=val
 
 ## pass options to free ##
 alias meminfo='free -m -l -t'
