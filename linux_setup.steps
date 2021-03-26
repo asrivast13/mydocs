@@ -99,6 +99,7 @@ sudo apt install dos2unix
 sudo apt install npm
 ## XML Starlet
 sudo snap install xmlstarlet
+or try sudo apt update && sudo apt install xmlstarlet
 ## JSON Parser
 sudo snap install jq
 
