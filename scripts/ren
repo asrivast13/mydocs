@@ -1,0 +1,19 @@
+#!/usr/local/bin/perl -w
+
+#Usage: rename.pl perlexpr [files]
+
+($op = shift) || die "Usage: ren perlexpr [filenames]\n";
+
+if(!@ARGV)
+{
+	@ARGV = <STDIN>;
+	chop(@ARGV);
+}
+
+for(@ARGV)
+{
+	$was = $_;
+	eval $op;
+	die $@ if $@;
+	rename($was, $_) unless $was eq $_;
+}
