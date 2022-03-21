@@ -107,3 +107,10 @@ sudo snap install jq
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt-get install python3.5-dev
 
+
+sudo apt install libsoxr-dev
+sudo apt install unzip
+sudo apt install git-lfs
+sudo apt install sox
+sudo apt install libsox-fmt-all
+sudo apt install ffmpeg

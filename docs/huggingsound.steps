@@ -1,0 +1,6 @@
+conda create -n kensho pip
+conda activate kensho
+pip install huggingsound
+conda install pytorch
+pip install pyctcdecode
+ pip install https://github.com/kpu/kenlm/archive/master.zip
