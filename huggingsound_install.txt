@@ -1,0 +1,13 @@
+sudo apt install unzip git-lfs sox libsoxr-dev libsox-fmt-all ffmpeg
+wget https://repo.anaconda.com/archive/Anaconda3-2021.11-Linux-x86_64.sh
+sh Anaconda3-2021.11-Linux-x86_64.sh
+source ~/.bashrc
+conda create -n hs1 pip
+conda activate hs1
+conda install pytorch
+pip install huggingsound
+cd Source/huggingsound/examples/speech_recognition/
+pip install pyctcdecode
+pip install https://github.com/kpu/kenlm/archive/master.zip
+p evaluation_noizeus.py
+p es_inference_kensho_decoder.py
