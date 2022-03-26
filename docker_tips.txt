@@ -1,0 +1,56 @@
+## The following commands unblocked network on the docker container on Ubuntu 14
+sudo apt-get install bridge-utils
+sudo pkill docker
+sudo iptables -t nat -F
+sudo ifconfig docker0 down
+sudo brctl delbr docker0
+sudo service docker restart
+
+## The following comands deletes zombie docker containers
+docker rm -f `docker ps -aq --no-trunc --filter "status=exited"`
+docker rmi -f `docker images --filter 'dangling=true' -q --no-trunc`
+
+## prior to running this command the filesystem looks like:
+### ls
+### cafserver-ebay/  Dockerfile  README.docker
+### ls cafserver-ebay/
+### bin  config  lib  models
+
+## now to build the docker image
+docker build -t cafserver .
+
+## build docker image from custom dockerfile
+docker build -t asrivast13/hsinferencesttes:v1 -f huggingSound.dockerfile .
+
+## run the docker container and execute the step in ENTRYPOINT
+docker run asrivast13/hsinferencesttes:v1 -h
+
+## ENTRYPOINT ["python", "/root/stt_inference.py"] is better than CMD which just provides arguments to ENTRYPOINT
+## run the docker container to get into the bash shell while overriding ENTRYPOINT and also map local drive and enable GPUs
+docker run -it --gpus all -v /home/asrivast/Docker:/root/data --entrypoint /bin/bash asrivast13/hsinferencesttes:v1
+
+## run the docker container in the background mapping the host port 80 to docker port 8080
+sudo docker run -d -p 80:8080 cafserver
+
+## save the docker image to file
+docker save -o cafserver.dockerimage.tar cafserver
+gzip cafserver.dockerimage.tar
+
+# Delete all containers
+docker rm -f $(docker ps -a -q)
+# Delete all images
+docker rmi -f $(docker images -q)
+
+## restore image from saved file
+docker load < cafserver.dockerimage.gz
+
+## great way to debug an application in a docker image
+docker run -it -p 80:80 gcr.io/ebay-n/aisvc:latest /bin/bash
+
+# Run a docker image while mounting a local folder where the code can be changed inside or outside the container
+# make sure the exposed ports are mapped to host machine so services can also be tested
+docker run -it --rm -v /home/amitsrivastava/build/ai-orchestrator-experimental:/root/source -p 80:80 gcr.io/ebay-n/aiosvc:latest /bin/bash
+
+## local runs
+amitsrivastava@L-SJC-10003233 MINGW64 ~/Projects/GCD
+docker run -it --rm -v ~/Projects/GCD/ContextManager:/root/gcd gcdbase /bin/bash
