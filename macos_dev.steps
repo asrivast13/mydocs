@@ -1,0 +1,10 @@
+ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" 2> /dev/null\n
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> /Users/asrivast/.zprofile\n
+eval "$(/opt/homebrew/bin/brew shellenv)"
+brew install libsoxr
+brew install xmlstarlet
+brew install automake autoconf wget sox libtool subversion
+brew install gfortran
+brew install openblas
+sudo ln -s /opt/homebrew/opt/openblas install
+brew install ffmpeg
