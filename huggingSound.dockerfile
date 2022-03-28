@@ -1,6 +1,6 @@
 # huggingsound
 #
-# VERSION               0.0.2
+# VERSION               0.0.3
 FROM ubuntu:18.04
 MAINTAINER Amit Srivastava <amit.srivastava@talkdesk.com>
 LABEL tips="to enable GPU use the command: \
@@ -27,3 +27,7 @@ RUN pip install --upgrade pip
 #RUN conda install pytorch
 RUN pip install -U huggingsound pyctcdecode
 RUN pip install https://github.com/kpu/kenlm/archive/master.zip
+
+# download spanish models now
+RUN cd /root && git lfs clone https://huggingface.co/jonatasgrosman/wav2vec2-large-xlsr-53-spanish && ln -s wav2vec2-large-xlsr-53-spanish Models
+COPY stt_inference.py /root/
