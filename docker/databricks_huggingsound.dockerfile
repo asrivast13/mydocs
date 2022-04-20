@@ -15,6 +15,6 @@ RUN apt install -y git-lfs
 RUN apt install -y ffmpeg
 
 ## Install Anaconda Python
-RUN pip install --upgrade pip
 RUN pip install -U huggingsound pyctcdecode
 RUN pip install https://github.com/kpu/kenlm/archive/master.zip
+RUN conda install -c anaconda virtualenv
