@@ -1,0 +1,17 @@
+> pip install databricks-cli
+
+### This is for Ben’s Databricks Workspace
+> databricks configure        
+Databricks Host (should begin with https://): https://dbc-c766f4fa-7253.cloud.databricks.com
+Username: amit.srivastava@talkdesk.com
+Password: <password on Ben’s Databricks account>
+Repeat for confirmation: 
+
+> dbfs ls dbfs:/FileStore/
+
+> dbfs cat dbfs:/FileStore/db_hs_init.sh
+
+> dbfs ls dbfs:/cluster_logs
+
+> dbfs cat dbfs:/cluster-logs/0422-231407-r7rgdykc/init_scripts/0422-231407-r7rgdykc_10_227_246_175/20220423_023914_00_db_hs_init.sh.stdout.log | less
+
