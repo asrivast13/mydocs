@@ -282,7 +282,7 @@ class AudioSegmenter(object):
             start_time = 0.0
             end_time = totalAudioDuration
             print('Segment from File %d: start=%.2f end=%.2f bytes=%d duration=%.2f\n' % (segid, start_time, end_time, len(databytes), len(audiosamples)/sample_rate))
-            segment = Utterance(audiosamples, start_time, (end_time - start_time), None)
+            segment = Utterance(audiosamples, start_time, (end_time - start_time), databytes)
             segmentsList.append(segment)
         else:
             totalSpeechDuration = 0.0
