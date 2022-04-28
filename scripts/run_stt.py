@@ -748,9 +748,9 @@ if __name__ == '__main__':
             rec.Reset()
             # convert list of JSON dictionaries to list of 'Word' objects
             ## Write CTM lines into the output file
-            print('Writing Vosk Decoder output to files %s and %s' % (outCTMFile, outJSONFile))
             outCTMFile = '%s/%s.ctm' % (outFolder, sessionId)
             outJSONFile = '%s/%s.json' % (outFolder, sessionId)
+            print('Writing Vosk Decoder output to files %s and %s' % (outCTMFile, outJSONFile))
             with open(outJSONFile, "w") as ofp:
                 ofp.write(json.dumps(results, indent=4))
 
