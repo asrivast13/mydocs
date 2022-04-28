@@ -659,6 +659,9 @@ if __name__ == '__main__':
                 decoder = ParlanceLMDecoder(HSmodel.token_set, lm_path=lm_path, alpha=args.ctcalpha, beta=args.ctcbeta, beam_width=args.ctcbeamw)    
                 #decoder = KenshoLMDecoder(model.token_set, lm_path=lm_path, unigrams_path=unigrams_path, alpha=args.ctcalpha, beta=args.ctcbeta, beam_width=args.ctcbeamw)
                 print("Finished loading Language Model")
+            else:
+                decoder = GreedyDecoder(HSmodel.token_set)
+                
         except Exception as e:
             print('Could not load acoustic model. Failed with message: %s' % e)
             sys.exit(-1)
@@ -666,8 +669,6 @@ if __name__ == '__main__':
     elif args.engine == 'vosk':
         print('Loading Vosk Model from folder: %s' % VoskModelFolder)
         VoskModel = Model(VoskModelFolder)
-        rec = KaldiRecognizer(VoskModel, sampleRate)
-        rec.SetWords(True)
     else:
         raise Exception('Unsupported Engine ... cannot get here ever')
 
@@ -719,6 +720,8 @@ if __name__ == '__main__':
             print(' ')
 
         elif args.engine == 'vosk':
+            rec = KaldiRecognizer(VoskModel, sampleRate)
+            rec.SetWords(True)
             # get the list of JSON dictionaries
             results = []
             if(useSegmentsInVosk):
@@ -745,7 +748,8 @@ if __name__ == '__main__':
                 results.append(part_result)
                 wf.close()  # close audiofile
 
-            rec.Reset()
+            #rec.Reset()
+            del rec
             # convert list of JSON dictionaries to list of 'Word' objects
             ## Write CTM lines into the output file
             outCTMFile = '%s/%s.ctm' % (outFolder, sessionId)
