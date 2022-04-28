@@ -26,6 +26,8 @@ from vosk import Model, KaldiRecognizer, SetLogLevel
 import webrtcvad
 import numpy as np
 
+VERBOSITY = 0
+
 # COMMAND ----------
 
 def read_wave(path):
@@ -129,8 +131,7 @@ class AudioSegmenter(object):
                       minSpeechInUtteranceInSecs=0.5, 
                       utteranceRunoffDuration=5, 
                       maxUtteranceDuration=30, 
-                      minSilenceAtEnds=0.06, 
-                      verbosity=0):
+                      minSilenceAtEnds=0.06):
         
         """Filters out non-voiced audio frames.
         Given a webrtcvad.Vad and a source of audio frames, yields only
@@ -155,7 +156,8 @@ class AudioSegmenter(object):
         num_padding_frames = self.num_frames_in_window
         sample_rate = self.sample_rate
         min_silence_frames_at_end = int(minSilenceAtEnds * 1000 / frame_duration_ms)
-        if verbosity>2: 
+        
+        if VERBOSITY>2: 
             print('Min Silence Frames at End: %d' % min_silence_frames_at_end)
         
         # We use a deque for our sliding window/ring buffer.
@@ -180,7 +182,7 @@ class AudioSegmenter(object):
         for frame in frames:
             is_speech = frame.isSpeech
 
-            if verbosity > 3:
+            if VERBOSITY > 3:
                 sys.stdout.write('1' if is_speech else '0')
                 sys.stdout.write(' %.2f\n' % frame.timestamp)
             if not triggered:
@@ -191,7 +193,7 @@ class AudioSegmenter(object):
                 # TRIGGERED state.
                 if num_voiced > triggerToggleFactor * ring_buffer.maxlen:
                     triggered = True
-                    if verbosity > 3:
+                    if VERBOSITY > 3:
                         sys.stdout.write('+(%s)\n' % (ring_buffer[0][0].timestamp,))
                     start_time = ring_buffer[0][0].timestamp
                     # We want to yield all the audio we see from now until
@@ -227,7 +229,7 @@ class AudioSegmenter(object):
                 (((end_time - start_time) > utteranceRunoffDuration) and (num_silence_frames_at_end >= min_silence_frames_at_end)) or
                    ((end_time - start_time) > maxUtteranceDuration)
                    ):
-                    if verbosity > 3:
+                    if VERBOSITY > 3:
                         sys.stdout.write('-(%s)\n' % (frame.timestamp + frame.duration))
                     end_time = frame.timestamp + frame.duration
                     #start_time -= minSilenceAtEnds if start_time >= minSilenceAtEnds else 0.0
@@ -235,8 +237,8 @@ class AudioSegmenter(object):
                     databytes = b''.join([f.bytes for f in voiced_frames])
                     audiosamples = np.frombuffer(databytes, dtype=np.int16).astype(np.float32)
                     audiosamples *= self.SCALE_FACTOR
-                    if verbosity > 1:
-                        print('Segment %d: start=%.2f end=%.2f bytes=%d duration=%.2f\n' % (segid, start_time, end_time, len(databytes), len(audiosamples)/sample_rate))
+                    if VERBOSITY > 1:
+                        print('Segment %d: start=%.2f end=%.2f bytes=%d duration=%.2f' % (segid, start_time, end_time, len(databytes), len(audiosamples)/sample_rate))
                     segid += 1
                     #databytes = None
                     yield(Utterance(audiosamples, start_time, (end_time - start_time), databytes))
@@ -245,7 +247,7 @@ class AudioSegmenter(object):
                     ring_buffer.clear()
                     voiced_frames = []
                     num_silence_frames_at_end = 0
-        if verbosity > 3:
+        if VERBOSITY > 3:
             if triggered:
                 sys.stdout.write('-(%s)\n' % (frame.timestamp + frame.duration))
             sys.stdout.write('\n')
@@ -256,8 +258,8 @@ class AudioSegmenter(object):
             databytes = b''.join([f.bytes for f in voiced_frames])
             audiosamples = np.frombuffer(databytes, dtype=np.int16).astype(np.float32)
             audiosamples *= self.SCALE_FACTOR
-            if verbosity > 1:
-                print('Segment %d: start=%.2f end=%.2f bytes=%d duration=%.2f\n' % (segid, start_time, end_time, len(databytes), len(audiosamples)/sample_rate))
+            if VERBOSITY > 1:
+                print('Segment %d: start=%.2f end=%.2f bytes=%d duration=%.2f' % (segid, start_time, end_time, len(databytes), len(audiosamples)/sample_rate))
             #databytes = None
             yield(Utterance(audiosamples, start_time, (end_time - start_time), databytes))
 
@@ -572,7 +574,9 @@ if __name__ == '__main__':
     parser.add_argument(
         "--segment", action='store_true', help="Should segmentation be run on this file (Default True for w2v2 engine)"
     )
-
+    parser.add_argument(
+        "-v", "--verbosity", type=int, required=False, default=0, help="Verbosity Level ([0]: basic 1: more, 2: high, >=3: debug)"
+    )
     parser.add_argument(
         "--vadpower", type=int, required=False, default=2, help="Aggressiveness of VAD (1: low, [2]: medium, 3: high)"
     )
@@ -588,7 +592,6 @@ if __name__ == '__main__':
     parser.add_argument(
         "--uselm", action='store_true', help="Should the W2V2 engine be run with LM (default: False ... greedy decoder)"
     )
-
     parser.add_argument(
         "--ctcalpha", type=float, required=False, default=2.0, help="W2V2 CTC Decoding parameter Alpha: (default 2.0)"
     )
@@ -599,8 +602,6 @@ if __name__ == '__main__':
         "--ctcbeamw", type=int, required=False, default=100, help="W2V2 CTC Decoding parameter Beam Width: (default 100)"
     )
     
-    
-   
     args = parser.parse_args()
 
     InputFileOrFolder = args.inpath
@@ -609,7 +610,7 @@ if __name__ == '__main__':
     outFolder = "./"
     if args.outpath and os.path.isdir(args.outpath):
         outFolder = args.outpath
-        
+    
     sampleRate = 16000
     useGPUifAvailable = True
     if(args.cpuonly):
@@ -621,6 +622,7 @@ if __name__ == '__main__':
     aggressiveness = args.vadpower
     frameDurationMs = args.framelen
     numFramesInWindow = args.winlen
+    VERBOSITY = args.verbosity
 
     print(args)
     #sys.exit(0)
