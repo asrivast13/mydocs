@@ -726,6 +726,9 @@ if __name__ == '__main__':
             results = []
             if(useSegmentsInVosk):
                 for segment in tqdm(segments):
+                    del rec
+                    rec = KaldiRecognizer(VoskModel, sampleRate)
+                    rec.SetWords(True)
                     if(len(segment.bytes) == 0):
                         continue;
                     if(rec.AcceptWaveform(segment.bytes)):
