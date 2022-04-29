@@ -9,7 +9,7 @@ import argparse
 from typing import Optional, Callable
 from tqdm import tqdm
 from transformers import (
-    Wav2Vec2Processor, 
+    Wav2Vec2Processor,
     AutoModelForCTC
 )
 from huggingsound.utils import get_chunks, get_waveforms, get_dataset_from_dict_list
@@ -77,7 +77,7 @@ def __frame_generator_old(frame_duration_ms, audio, sample_rate, vad=None):
         yield Frame(audio[offset:offset + n], timestamp, duration, is_speech)
         timestamp += duration
         offset += n
-        
+
 class Utterance(object):
     """Represents an utterance of speech audio data."""
     def __init__(self, audio, timestamp, duration, bytes):
@@ -85,14 +85,14 @@ class Utterance(object):
         self.timestamp = timestamp
         self.duration = duration
         self.bytes=bytes
-        
+
 
 class AudioSegmenter(object):
     """Represents the WebRTC based Audio Segmentation tool"""
-    def __init__(self, 
-                 vadAggressiveness=2, 
-                 frameDurationMs=30, 
-                 numFramesInWindow=100, 
+    def __init__(self,
+                 vadAggressiveness=2,
+                 frameDurationMs=30,
+                 numFramesInWindow=100,
                  samplingRate=16000,
                  numBytesPerSample=2):
         assert numBytesPerSample == 2  ## for now although the algo should work for byte encodings
@@ -124,15 +124,15 @@ class AudioSegmenter(object):
             timestamp += duration
             offset += n
 
-            
-    def vad_collector(self, 
-                      frames, 
-                      triggerToggleFactor=0.9, 
-                      minSpeechInUtteranceInSecs=0.5, 
-                      utteranceRunoffDuration=5, 
-                      maxUtteranceDuration=30, 
+
+    def vad_collector(self,
+                      frames,
+                      triggerToggleFactor=0.9,
+                      minSpeechInUtteranceInSecs=0.5,
+                      utteranceRunoffDuration=5,
+                      maxUtteranceDuration=30,
                       minSilenceAtEnds=0.06):
-        
+
         """Filters out non-voiced audio frames.
         Given a webrtcvad.Vad and a source of audio frames, yields only
         the voiced audio.
@@ -156,10 +156,10 @@ class AudioSegmenter(object):
         num_padding_frames = self.num_frames_in_window
         sample_rate = self.sample_rate
         min_silence_frames_at_end = int(minSilenceAtEnds * 1000 / frame_duration_ms)
-        
-        if VERBOSITY>2: 
+
+        if VERBOSITY>2:
             print('Min Silence Frames at End: %d' % min_silence_frames_at_end)
-        
+
         # We use a deque for our sliding window/ring buffer.
         ring_buffer = collections.deque(maxlen=num_padding_frames)
         # We have two states: TRIGGERED and NOTTRIGGERED. We start in the
@@ -172,7 +172,7 @@ class AudioSegmenter(object):
         numFrames = len(frames)
         for index, frame in enumerate(frames):
             if(index > 0) and (index < (numFrames-1)):
-                if((frames[index].isSpeech != frames[index-1].isSpeech) 
+                if((frames[index].isSpeech != frames[index-1].isSpeech)
                    and (frames[index-1].isSpeech == frames[index+1].isSpeech)):
                     frames[index].isSpeech = frames[index-1].isSpeech
 
@@ -224,8 +224,8 @@ class AudioSegmenter(object):
                 # audio we've collected.
                 if((numSpeechFramesInUtterance * frame_duration_ms / 1000) < minSpeechInUtteranceInSecs):
                     continue
-                    
-                if ((num_unvoiced > (triggerToggleFactor * ring_buffer.maxlen)) or 
+
+                if ((num_unvoiced > (triggerToggleFactor * ring_buffer.maxlen)) or
                 (((end_time - start_time) > utteranceRunoffDuration) and (num_silence_frames_at_end >= min_silence_frames_at_end)) or
                    ((end_time - start_time) > maxUtteranceDuration)
                    ):
@@ -263,19 +263,19 @@ class AudioSegmenter(object):
             #databytes = None
             yield(Utterance(audiosamples, start_time, (end_time - start_time), databytes))
 
-    def process(self, audio, 
-                triggerToggleFactor=0.9, 
-                minSpeechInUtteranceInSecs=0.5, 
-                utteranceRunoffDuration=5, 
-                maxUtteranceDuration=30, 
+    def process(self, audio,
+                triggerToggleFactor=0.9,
+                minSpeechInUtteranceInSecs=0.5,
+                utteranceRunoffDuration=5,
+                maxUtteranceDuration=30,
                 minSilenceAtEnds=0.06):
-        
+
         frames = self.frame_generator(audio)
         frames = list(frames)
-        
+
         totalAudioDuration = len(audio) / (self.sample_rate * self.num_bytes_per_sample)
         segmentsList = []
-        
+
         if(totalAudioDuration < self.minAudioFileDurationInSecs):
             databytes = b''.join([f.bytes for f in frames])
             audiosamples = np.frombuffer(databytes, dtype=np.int16).astype(np.float32)
@@ -298,7 +298,7 @@ class AudioSegmenter(object):
                 totalNumSegments += 1
                 segmentsList.append(segment)
 
-            print('Segmenter found total of %d segments with duration %.2fsecs from audio of duration %.2fsecs with max=%.2f -- compression factor: %.2f%%' 
+            print('Segmenter found total of %d segments with duration %.2fsecs from audio of duration %.2fsecs with max=%.2f -- compression factor: %.2f%%'
                       % (totalNumSegments, totalSpeechDuration, totalAudioDuration, maxDuration, (100.0*totalSpeechDuration/totalAudioDuration)))
         return segmentsList
 
@@ -323,17 +323,17 @@ class SpeechRecognitionModel2():
     ----------
     model_path : str
         The path to the model or the model identifier from huggingface.co/models.
-    
+
     device: Optional[str] = "cpu"
-        Device to use for inference/evaluation/training, default is "cpu". If you want to use a GPU for that, 
+        Device to use for inference/evaluation/training, default is "cpu". If you want to use a GPU for that,
         you'll probably need to specify the device as "cuda"
     """
 
     def __init__(self, model_path: str, device: Optional[str] = "cpu"):
-        
+
         self.model_path = model_path
         self.device = device
-        
+
         logger.info("Loading model...")
         self._load_model()
 
@@ -355,7 +355,7 @@ class SpeechRecognitionModel2():
             self.token_set = None
 
     def transcribeFiles(self, paths: list[str], batch_size: Optional[int] = 1, decoder: Optional[Decoder] = None) -> list[dict]:
-        """ 
+        """
         Transcribe audio files.
 
         Parameters:
@@ -384,7 +384,7 @@ class SpeechRecognitionModel2():
 
         if not self.is_finetuned:
             raise ValueError("Not fine-tuned model! Please, fine-tune the model first.")
-        
+
         if decoder is None:
             decoder = GreedyDecoder(self.token_set)
 
@@ -403,9 +403,9 @@ class SpeechRecognitionModel2():
             result += decoder(logits)
 
         return result
-    
+
     def transcribeAudio(self, utterances: list[Utterance], batch_size: Optional[int] = 1, decoder: Optional[Decoder] = None) -> list[dict]:
-        """ 
+        """
         Transcribe audio files.
 
         Parameters:
@@ -463,7 +463,7 @@ class SpeechRecognitionModel2():
                 result.append(br)
 
         return result
-    
+
     def convertToCTM(self, utterance: dict, extrapolate: Optional[bool] = False) -> dict:
         transcript  = utterance["transcription"]
         uttstart    = float(utterance['utterance_start'])
@@ -472,12 +472,12 @@ class SpeechRecognitionModel2():
         char_ends   = utterance["end_timestamps"]
         tokens = []
 
-        if((char_starts is None) 
-           or (char_ends is None) 
-           or (len(char_starts) == 0) 
-           or (len(char_ends) == 0) or 
-           (len(transcript) != len(char_starts)) 
-           or (len(char_starts) != len(char_ends)) 
+        if((char_starts is None)
+           or (char_ends is None)
+           or (len(char_starts) == 0)
+           or (len(char_ends) == 0) or
+           (len(transcript) != len(char_starts))
+           or (len(char_starts) != len(char_ends))
            or (char_ends[-1] > (duration * 1000))):
             extrapolate = True
 
@@ -531,7 +531,7 @@ class SpeechRecognitionModel2():
 class VoskWord:
     ''' A class representing a word from the JSON format for vosk speech recognition API '''
 
-    def __init__(self, dict):
+    def __init__(self, dict, uttstart=0):
         '''
         Parameters:
           dict (dict) dictionary from JSON, containing:
@@ -542,8 +542,8 @@ class VoskWord:
         '''
 
         self.conf = dict["conf"]
-        self.end = dict["end"]
-        self.start = dict["start"]
+        self.end = dict["end"] + uttstart
+        self.start = dict["start"] + uttstart
         self.word = dict["word"]
 
     def to_string(self, tag):
@@ -567,7 +567,7 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         "--engine", required=True, choices=supported_engines, type=str.lower, help="Speech Recognition Engine (one of vosk or w2v2)"
-    )    
+    )
     parser.add_argument(
         "--outpath", type=str, required=False, help="Output Path"
     )
@@ -601,7 +601,7 @@ if __name__ == '__main__':
     parser.add_argument(
         "--ctcbeamw", type=int, required=False, default=100, help="W2V2 CTC Decoding parameter Beam Width: (default 100)"
     )
-    
+
     args = parser.parse_args()
 
     InputFileOrFolder = args.inpath
@@ -610,7 +610,7 @@ if __name__ == '__main__':
     outFolder = "./"
     if args.outpath and os.path.isdir(args.outpath):
         outFolder = args.outpath
-    
+
     sampleRate = 16000
     useGPUifAvailable = True
     if(args.cpuonly):
@@ -632,7 +632,7 @@ if __name__ == '__main__':
     decoder = None
     VoskModel = None
     rec = None
-    
+
     if args.engine == 'w2v2' or useSegmentsInVosk == True:
         ## initialize segmenter
         ## sample rate is assumed to be 16000 and bytes-per-sample is always assumed to be 2 because input is assumed to be WAV
@@ -656,12 +656,12 @@ if __name__ == '__main__':
                 unigrams_path = LmModelFolder + "unigrams.txt"
                 # To use this decoder you'll need to install the Parlance's ctcdecode first (https://github.com/parlance/ctcdecode)
                 print('Starting to load LM file %s in ParlanceLMDecoder ...' % lm_path)
-                decoder = ParlanceLMDecoder(HSmodel.token_set, lm_path=lm_path, alpha=args.ctcalpha, beta=args.ctcbeta, beam_width=args.ctcbeamw)    
+                decoder = ParlanceLMDecoder(HSmodel.token_set, lm_path=lm_path, alpha=args.ctcalpha, beta=args.ctcbeta, beam_width=args.ctcbeamw)
                 #decoder = KenshoLMDecoder(model.token_set, lm_path=lm_path, unigrams_path=unigrams_path, alpha=args.ctcalpha, beta=args.ctcbeta, beam_width=args.ctcbeamw)
                 print("Finished loading Language Model")
             else:
                 decoder = GreedyDecoder(HSmodel.token_set)
-                
+
         except Exception as e:
             print('Could not load acoustic model. Failed with message: %s' % e)
             sys.exit(-1)
@@ -683,7 +683,7 @@ if __name__ == '__main__':
 
     if(len(audioFilesList) == 0):
         raise Exception('No WAV files in input path: %s' % InputFileOrFolder)
-    
+
     for audioFile in audioFilesList:
         #read audio file into buffer
         audio, sample_rate = read_wave(audioFile)
@@ -730,9 +730,11 @@ if __name__ == '__main__':
                         continue;
                     if(rec.AcceptWaveform(segment.bytes)):
                         part_result = json.loads(rec.Result())
+                        part_result['uttstart'] = segment.timestamp
                         results.append(part_result)
                     part_result = json.loads(rec.FinalResult())
                     if(part_result):
+                        part_result['uttstart'] = segment.timestamp
                         results.append(part_result)
             else:
                 # recognize speech using vosk model in streaming mode
@@ -761,14 +763,15 @@ if __name__ == '__main__':
             list_of_Words = []
             for sentence in results:
                 if len(sentence) == 1:
-                    # sometimes there are bugs in recognition 
+                    # sometimes there are bugs in recognition
                     # and it returns an empty dictionary
                     # {'text': ''}
                     continue
+                uttstart = float(sentence['uttstart']) if 'uttstart' in sentence else 0
                 #print(json.dumps(sentence, indent=4))
                 #print("%s  %.2f  %.2f  %s" % (sessionId, sentence['result'][0]["start"], sentence['result'][-1]["end"], sentence["text"]))
                 for obj in sentence['result']:
-                    w = VoskWord(obj)  # create custom Word object
+                    w = VoskWord(obj, uttstart)  # create custom Word object
                     list_of_Words.append(w)  # and add it to list
 
             # output to the screen
@@ -777,5 +780,3 @@ if __name__ == '__main__':
                     ofp.write("%s\n" % word.to_string(sessionId))
 
 # COMMAND ----------
-
-
