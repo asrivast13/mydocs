@@ -762,7 +762,7 @@ if __name__ == '__main__':
 
             list_of_Words = []
             for sentence in results:
-                if len(sentence) == 1:
+                if (len(sentence) == 1) or ("text" in sentence and sentence["text"]=='') or ("result" not in sentence):
                     # sometimes there are bugs in recognition
                     # and it returns an empty dictionary
                     # {'text': ''}
