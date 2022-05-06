@@ -3,6 +3,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import time
+tf.compat.v1.disable_eager_execution()
 
 def get_times(maximum_time):
 
@@ -20,12 +21,12 @@ def get_times(maximum_time):
             shape = (size,size)
             data_type = tf.float16
             with tf.device(device_name):
-                r1 = tf.random_uniform(shape=shape, minval=0, maxval=1, dtype=data_type)
-                r2 = tf.random_uniform(shape=shape, minval=0, maxval=1, dtype=data_type)
+                r1 = tf.random.uniform(shape=shape, minval=0, maxval=1, dtype=data_type)
+                r2 = tf.random.uniform(shape=shape, minval=0, maxval=1, dtype=data_type)
                 dot_operation = tf.matmul(r2, r1)
 
 
-            with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as session:
+            with tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(log_device_placement=True)) as session:
                     start_time = time.time()
                     result = session.run(dot_operation)
                     time_taken = time.time() - start_time
