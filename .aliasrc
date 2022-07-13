@@ -8,12 +8,18 @@ function topn ()
 { 
     for d in k*/results.json;
     do
-        t=`cat $d | jq '.test | .topn'`;
+        topn=`cat $d | jq '.dev.topn'`;
+	prec=`cat $d | jq '.dev.prec'`;
+	f1=`cat $d | jq '.dev.f1'`;
         b=`echo $d | awk -F'/' '{print $1}'`;
-        echo -e "$b \t $t";
+        echo -e "$b \t $topn \t $prec \t $f1";
     done
 }
 
+function jless () {
+	cat $@ | json_pp | less
+}
+alias jl=jless
 
 function lls() {
 	ls `pwd`/$@
