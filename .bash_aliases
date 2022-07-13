@@ -144,3 +144,5 @@ alias k9='kill -9'
 alias emm='export TERM=rxvt'
 alias umm='export TERM=xterm-color' 
 alias ew='\emacs -nw'
+
+alias stats="jq -s '{count:length,sum:add,minimum:min,maximum:max,average:(add/length),median:(sort|if length%2==1 then.[length/2|floor]else[.[length/2-1,length/2]]|add/2 end)}'"
