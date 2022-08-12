@@ -1,0 +1,74 @@
+
+sox 2ch.mp3 2ch.wav
+sox 2ch.wav lch.wav remix 1
+sox 2ch.wav rch.wav remix 2
+soxi 2ch.mp3 2ch.wav lch.wav rch.wav
+
+Input File     : '2ch.mp3'
+Channels       : 2
+Sample Rate    : 8000
+Precision      : 16-bit
+Duration       : 00:15:00.02 = 7200128 samples ~ 67501.2 CDDA sectors
+File Size      : 7.20M
+Bit Rate       : 64.0k
+Sample Encoding: MPEG audio (layer I, II or III)
+
+
+Input File     : '2ch.wav'
+Channels       : 2
+Sample Rate    : 8000
+Precision      : 16-bit
+Duration       : 00:15:00.00 = 7200000 samples ~ 67500 CDDA sectors
+File Size      : 28.8M
+Bit Rate       : 256k
+Sample Encoding: 16-bit Signed Integer PCM
+
+
+Input File     : 'lch.wav'
+Channels       : 1
+Sample Rate    : 8000
+Precision      : 16-bit
+Duration       : 00:15:00.00 = 7200000 samples ~ 67500 CDDA sectors
+File Size      : 14.4M
+Bit Rate       : 128k
+Sample Encoding: 16-bit Signed Integer PCM
+
+
+Input File     : 'rch.wav'
+Channels       : 1
+Sample Rate    : 8000
+Precision      : 16-bit
+Duration       : 00:15:00.00 = 7200000 samples ~ 67500 CDDA sectors
+File Size      : 14.4M
+Bit Rate       : 128k
+Sample Encoding: 16-bit Signed Integer PCM
+
+
+(speechbrain) asrivast@Amit-Home-Desktop:~/d/Data/Speech/CallHome/tmp$ python
+Python 3.10.4 (main, Mar 31 2022, 08:41:55) [GCC 7.5.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import torch as t
+>>> import torchaudio as ta
+>>> wl, sr = ta.load('lch.wav')
+>>> wr, sr = ta.load('rch.wav')
+>>> (wl==wr).all()
+tensor(False)
+>>> w2, sr = ta.load('2ch.wav')
+>>> w1s = t.tensor_split(w2, 2, dim=0)
+>>> w1s[0].shape
+torch.Size([1, 7200000])
+>>> w1s[1].shape
+torch.Size([1, 7200000])
+>>> wl.shape
+torch.Size([1, 7200000])
+>>> wr.shape
+torch.Size([1, 7200000])
+>>> (wl==w1s[0]).all()
+tensor(True)
+>>> (wl==w1s[1]).all()
+tensor(False)
+>>> (wr==w1s[0]).all()
+tensor(False)
+>>> (wr==w1s[1]).all()
+tensor(True)
+
