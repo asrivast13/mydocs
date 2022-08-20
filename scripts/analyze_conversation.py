@@ -7,6 +7,7 @@ import torchaudio.transforms as T
 from collections import deque
 from speechbrain.pretrained import VAD
 import logging
+import matplotlib.pyplot as plt
 
 logging.basicConfig(
         format='%(asctime)s.%(msecs)03d %(levelname)-8s %(message)s',
@@ -53,13 +54,23 @@ tmpAudioBase = os.path.join(TMPDIR, audioBase)
 
 tmpAudioFile = tmpAudioBase + "_left.wav"
 logging.info('resampling to 16K and writing left channel to tmp file %s' % tmpAudioFile)
-torchaudio.save(tmpAudioFile, resampler(left), 16000, encoding="PCM_S", bits_per_sample=16)
+left16k = resampler(left)
+torchaudio.save(tmpAudioFile, left16k, 16000, encoding="PCM_S", bits_per_sample=16)
+
+fs = 16000
 
 logging.info('running VAD on left channel')
 leftseg = VAD.get_speech_segments(tmpAudioFile)
 
 logging.info("Left Segments: ")
 VAD.save_boundaries(leftseg)
+
+time = torch.linspace(0, left16k.shape[0]/fs, steps=left16k.shape[0])
+upsampled_left = VAD.upsample_boundaries(leftseg, tmpAudioFile)
+
+plt.plot(time, left16k)
+plt.plot(time, upsampled_left.squeeze())
+
 os.remove(tmpAudioFile)
 
 tmpAudioFile = tmpAudioBase + "_right.wav"
