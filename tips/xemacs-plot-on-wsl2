@@ -1,0 +1,15 @@
+
+sudo apt-get update && sudo apt-get install python3-tk
+sudo apt install x11-apps
+sudo apt install xemacs21
+export DISPLAY=`grep -oP "(?<=nameserver ).+" /etc/resolv.conf`:0.0
+
+Install VcXsrv from:
+https://sourceforge.net/projects/vcxsrv/
+
+Run XLaunch.exe from:
+"C:\Program Files\VcXsrv\xlaunch.exe"
+
+[Multiple windows --> Start no client --> Disable access control (True) && Native opengl (False)]
+
+Now try xcalc

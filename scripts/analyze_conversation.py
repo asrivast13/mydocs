@@ -15,6 +15,9 @@ logging.basicConfig(
         datefmt='%Y-%m-%d %H:%M:%S')
 
 TMPDIR = '.'
+SHOWPLOTS = True
+MAXPLOTDURATION = 30 #secs
+
 myargs = deque(sys.argv)
 progName = myargs.popleft()
 
@@ -57,19 +60,55 @@ logging.info('resampling to 16K and writing left channel to tmp file %s' % tmpAu
 left16k = resampler(left)
 torchaudio.save(tmpAudioFile, left16k, 16000, encoding="PCM_S", bits_per_sample=16)
 
-fs = 16000
-
 logging.info('running VAD on left channel')
-leftseg = VAD.get_speech_segments(tmpAudioFile)
+#leftseg = VAD.get_speech_segments(tmpAudioFile, speech_th=0.3)
+leftseg = VAD.get_speech_segments(tmpAudioFile, 
+                                small_chunk_size=5, 
+                                apply_energy_VAD=True,
+                                double_check=True,
+                                activation_th=0.25, 
+                                deactivation_th=0.1,
+                                en_activation_th=0.25,
+                                en_deactivation_th=0.05,
+                                speech_th=0.4)
 
 logging.info("Left Segments: ")
 VAD.save_boundaries(leftseg)
 
-time = torch.linspace(0, left16k.shape[0]/fs, steps=left16k.shape[0])
-upsampled_left = VAD.upsample_boundaries(leftseg, tmpAudioFile)
+if SHOWPLOTS:
+    left16k1ch = left16k.squeeze()
+    fs = 16000
+    time = torch.linspace(0, left16k1ch.shape[0]/fs, steps=left16k1ch.shape[0])
+    upsampled_left = VAD.upsample_boundaries(leftseg, tmpAudioFile)
 
-plt.plot(time, left16k)
-plt.plot(time, upsampled_left.squeeze())
+    #logging.info(time.shape)
+    #logging.info(left16k1ch.shape)
+    #logging.info(upsampled_left.squeeze().shape)
+
+    prob_chunks = VAD.get_speech_prob_file(tmpAudioFile)
+    logging.info(prob_chunks.shape)
+    plt.plot(prob_chunks.squeeze())
+    #plt.show()
+    plt.savefig('leftscores.jpg')
+
+    plt.clf()
+    plt.cla() 
+    plt.close()
+
+    N = fs * MAXPLOTDURATION
+    x = time
+    y = left16k1ch
+    z = upsampled_left.squeeze()
+
+    if left16k1ch.shape[0] > N:
+        x = time[0:N]
+        y = left16k1ch[0:N]
+        z = upsampled_left.squeeze()[0:N]
+    
+    plt.plot(x, y)
+    plt.plot(x, z)
+    plt.savefig('leftout.jpg')
+    plt.show()
 
 os.remove(tmpAudioFile)
 
