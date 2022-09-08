@@ -1,0 +1,18 @@
+### Using deque to read command line parameters
+from collections import deque
+import sys
+myargs = deque(sys.argv)
+progName = myargs.popleft()
+print(progName)
+#for progarg in myargs:
+#    print(progarg)
+lastarg = myargs.pop()
+
+### logging with data/time etc.
+import logging
+
+logging.basicConfig(
+        format='%(asctime)s.%(msecs)03d %(levelname)-8s %(message)s',
+        level=logging.INFO,
+        datefmt='%Y-%m-%d %H:%M:%S')
+logging.info("This is a test message")
