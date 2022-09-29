@@ -1,5 +1,28 @@
+# Databricks notebook source
+from __future__ import annotations
+import os
+import sys
+import warnings
+import logging
+import argparse
+import collections
+import contextlib
+import wave
+import glob
 import webrtcvad
 import numpy as np
+
+VERBOSITY = 0
+
+# COMMAND ----------
+# Setup logging
+#logger = logging.getLogger(__name__)
+#logging.basicConfig(
+#    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+#    datefmt="%m/%d/%Y %H:%M:%S",
+#    handlers=[logging.StreamHandler(sys.stdout)],
+#)
+#logger.setLevel(logging.INFO)
 
 def read_wave(path):
     """Reads a .wav file.
@@ -48,7 +71,7 @@ def __frame_generator_old(frame_duration_ms, audio, sample_rate, vad=None):
         yield Frame(audio[offset:offset + n], timestamp, duration, is_speech)
         timestamp += duration
         offset += n
-        
+
 class Utterance(object):
     """Represents an utterance of speech audio data."""
     def __init__(self, audio, timestamp, duration, bytes):
@@ -60,10 +83,10 @@ class Utterance(object):
 
 class AudioSegmenter(object):
     """Represents the WebRTC based Audio Segmentation tool"""
-    def __init__(self, 
-                 vadAggressiveness=2, 
-                 frameDurationMs=30, 
-                 numFramesInWindow=100, 
+    def __init__(self,
+                 vadAggressiveness=2,
+                 frameDurationMs=30,
+                 numFramesInWindow=100,
                  samplingRate=16000,
                  numBytesPerSample=2):
         assert numBytesPerSample == 2  ## for now although the algo should work for byte encodings
@@ -95,16 +118,15 @@ class AudioSegmenter(object):
             timestamp += duration
             offset += n
 
-            
-    def vad_collector(self, 
-                      frames, 
-                      triggerToggleFactor=0.9, 
-                      minSpeechInUtteranceInSecs=0.5, 
-                      utteranceRunoffDuration=5, 
-                      maxUtteranceDuration=30, 
-                      minSilenceAtEnds=0.06, 
-                      verbosity=0):
-        
+
+    def vad_collector(self,
+                      frames,
+                      triggerToggleFactor=0.9,
+                      minSpeechInUtteranceInSecs=0.5,
+                      utteranceRunoffDuration=5,
+                      maxUtteranceDuration=30,
+                      minSilenceAtEnds=0.06):
+
         """Filters out non-voiced audio frames.
         Given a webrtcvad.Vad and a source of audio frames, yields only
         the voiced audio.
@@ -128,9 +150,10 @@ class AudioSegmenter(object):
         num_padding_frames = self.num_frames_in_window
         sample_rate = self.sample_rate
         min_silence_frames_at_end = int(minSilenceAtEnds * 1000 / frame_duration_ms)
-        if verbosity>2: 
+
+        if VERBOSITY>2:
             print('Min Silence Frames at End: %d' % min_silence_frames_at_end)
-        
+
         # We use a deque for our sliding window/ring buffer.
         ring_buffer = collections.deque(maxlen=num_padding_frames)
         # We have two states: TRIGGERED and NOTTRIGGERED. We start in the
@@ -143,7 +166,7 @@ class AudioSegmenter(object):
         numFrames = len(frames)
         for index, frame in enumerate(frames):
             if(index > 0) and (index < (numFrames-1)):
-                if((frames[index].isSpeech != frames[index-1].isSpeech) 
+                if((frames[index].isSpeech != frames[index-1].isSpeech)
                    and (frames[index-1].isSpeech == frames[index+1].isSpeech)):
                     frames[index].isSpeech = frames[index-1].isSpeech
 
@@ -153,7 +176,7 @@ class AudioSegmenter(object):
         for frame in frames:
             is_speech = frame.isSpeech
 
-            if verbosity > 3:
+            if VERBOSITY > 3:
                 sys.stdout.write('1' if is_speech else '0')
                 sys.stdout.write(' %.2f\n' % frame.timestamp)
             if not triggered:
@@ -164,7 +187,7 @@ class AudioSegmenter(object):
                 # TRIGGERED state.
                 if num_voiced > triggerToggleFactor * ring_buffer.maxlen:
                     triggered = True
-                    if verbosity > 3:
+                    if VERBOSITY > 3:
                         sys.stdout.write('+(%s)\n' % (ring_buffer[0][0].timestamp,))
                     start_time = ring_buffer[0][0].timestamp
                     # We want to yield all the audio we see from now until
@@ -190,17 +213,24 @@ class AudioSegmenter(object):
                     num_silence_frames_at_end += 1
                 numSpeechFramesInUtterance = sum([int(f.isSpeech) for f in voiced_frames])
                 end_time = frame.timestamp + frame.duration
-                # If more than 90% of the frames in the ring buffer are
+                # If more than X% of the frames in the ring buffer are
                 # unvoiced, then enter NOTTRIGGERED and yield whatever
                 # audio we've collected.
-                if((numSpeechFramesInUtterance * frame_duration_ms / 1000) < minSpeechInUtteranceInSecs):
-                    continue
-                    
-                if ((num_unvoiced > (triggerToggleFactor * ring_buffer.maxlen)) or 
+                #if((numSpeechFramesInUtterance * frame_duration_ms / 1000) < minSpeechInUtteranceInSecs):
+                #    continue
+
+                if VERBOSITY > 5:
+                    cond1 = num_unvoiced / ring_buffer.maxlen
+                    cond2 = (end_time - start_time) / utteranceRunoffDuration
+                    cond3 = num_silence_frames_at_end / min_silence_frames_at_end
+                    cond4 = (end_time - start_time) / maxUtteranceDuration
+                    sys.stdout.write(">>>%.2f %.2f %.2f %.2f\n" % (cond1, cond2, cond3, cond4))
+
+                if ((num_unvoiced > (triggerToggleFactor * ring_buffer.maxlen)) or
                 (((end_time - start_time) > utteranceRunoffDuration) and (num_silence_frames_at_end >= min_silence_frames_at_end)) or
                    ((end_time - start_time) > maxUtteranceDuration)
                    ):
-                    if verbosity > 3:
+                    if VERBOSITY > 3:
                         sys.stdout.write('-(%s)\n' % (frame.timestamp + frame.duration))
                     end_time = frame.timestamp + frame.duration
                     #start_time -= minSilenceAtEnds if start_time >= minSilenceAtEnds else 0.0
@@ -208,8 +238,8 @@ class AudioSegmenter(object):
                     databytes = b''.join([f.bytes for f in voiced_frames])
                     audiosamples = np.frombuffer(databytes, dtype=np.int16).astype(np.float32)
                     audiosamples *= self.SCALE_FACTOR
-                    if verbosity > 1:
-                        print('Segment %d: start=%.2f end=%.2f bytes=%d duration=%.2f\n' % (segid, start_time, end_time, len(databytes), len(audiosamples)/sample_rate))
+                    if VERBOSITY > 4:
+                        print('Segment %d: start=%.2f end=%.2f bytes=%d duration=%.2f' % (segid, start_time, end_time, len(databytes), len(audiosamples)/sample_rate))
                     segid += 1
                     #databytes = None
                     yield(Utterance(audiosamples, start_time, (end_time - start_time), databytes))
@@ -218,7 +248,7 @@ class AudioSegmenter(object):
                     ring_buffer.clear()
                     voiced_frames = []
                     num_silence_frames_at_end = 0
-        if verbosity > 3:
+        if VERBOSITY > 3:
             if triggered:
                 sys.stdout.write('-(%s)\n' % (frame.timestamp + frame.duration))
             sys.stdout.write('\n')
@@ -229,24 +259,24 @@ class AudioSegmenter(object):
             databytes = b''.join([f.bytes for f in voiced_frames])
             audiosamples = np.frombuffer(databytes, dtype=np.int16).astype(np.float32)
             audiosamples *= self.SCALE_FACTOR
-            if verbosity > 1:
-                print('Segment %d: start=%.2f end=%.2f bytes=%d duration=%.2f\n' % (segid, start_time, end_time, len(databytes), len(audiosamples)/sample_rate))
+            if VERBOSITY > 4:
+                print('Segment %d: start=%.2f end=%.2f bytes=%d duration=%.2f' % (segid, start_time, end_time, len(databytes), len(audiosamples)/sample_rate))
             #databytes = None
             yield(Utterance(audiosamples, start_time, (end_time - start_time), databytes))
 
-    def process(self, audio, 
-                triggerToggleFactor=0.9, 
-                minSpeechInUtteranceInSecs=0.5, 
-                utteranceRunoffDuration=5, 
-                maxUtteranceDuration=30, 
+    def process(self, audio,
+                triggerToggleFactor=0.9,
+                minSegmentDuration=0,
+                utteranceRunoffDuration=5,
+                maxUtteranceDuration=30,
                 minSilenceAtEnds=0.06):
-        
+
         frames = self.frame_generator(audio)
         frames = list(frames)
-        
+
         totalAudioDuration = len(audio) / (self.sample_rate * self.num_bytes_per_sample)
         segmentsList = []
-        
+
         if(totalAudioDuration < self.minAudioFileDurationInSecs):
             databytes = b''.join([f.bytes for f in frames])
             audiosamples = np.frombuffer(databytes, dtype=np.int16).astype(np.float32)
@@ -261,14 +291,142 @@ class AudioSegmenter(object):
             totalSpeechDuration = 0.0
             totalNumSegments = 0
             maxDuration = 0.0
-            speech_segments = self.vad_collector(frames, triggerToggleFactor, minSpeechInUtteranceInSecs, utteranceRunoffDuration, maxUtteranceDuration, minSilenceAtEnds)
+            speech_segments = self.vad_collector(frames, triggerToggleFactor, 0, utteranceRunoffDuration, maxUtteranceDuration, minSilenceAtEnds)
             for segment in speech_segments:
-                if segment.duration > maxDuration:
-                    maxDuration = segment.duration
-                totalSpeechDuration += segment.duration
-                totalNumSegments += 1
-                segmentsList.append(segment)
+                #if len(segmentsList) == 0:
+                #    print("Type(audio): %s, Type(bytes): %s" % (type(segment.audio), type(segment.bytes)))
 
-            print('Segmenter found total of %d segments with duration %.2fsecs from audio of duration %.2fsecs with max=%.2f -- compression factor: %.2f%%' 
-                      % (totalNumSegments, totalSpeechDuration, totalAudioDuration, maxDuration, (100.0*totalSpeechDuration/totalAudioDuration)))
+                if minSegmentDuration > 0:
+                    if len(segmentsList) > 0:
+                        prevLen = segmentsList[-1].duration
+                        prevEnd = segmentsList[-1].duration + segmentsList[-1].timestamp
+                        currLen = segment.duration
+                        currStart = segment.timestamp
+                        sumLen = currLen + prevLen
+
+                        #print("%s %s %s" % ((prevLen < minSegmentDuration), ((currStart - prevEnd) < minSilenceAtEnds), (sumLen < maxUtteranceDuration)))
+
+                        if (prevLen < minSegmentDuration) and ((currStart - prevEnd) <= minSilenceAtEnds) and (sumLen < maxUtteranceDuration):
+                            segmentsList[-1].duration += currLen
+                            segmentsList[-1].bytes += segment.bytes
+                            segmentsList[-1].audio = np.concatenate([segmentsList[-1].audio, segment.audio])
+                            #print("MERGED: <%.2f> %.2f %.2f <%.2f> %.2f <%.2f>" % (prevLen, prevEnd, currStart, currStart-prevEnd, currLen, sumLen))
+                        else:
+                            segmentsList.append(segment)
+                            #print("SKIPPED: <%.2f> %.2f %.2f <%.2f> %.2f <%.2f>" % (prevLen, prevEnd, currStart, currStart-prevEnd, currLen, sumLen))
+                    else:
+                        segmentsList.append(segment)
+                        #print("FIRST: %.2f %.2f %.2f" % (segment.timestamp, segment.duration, segment.timestamp+segment.duration))
+                        #print("minSegmentDuration=%.2f minSilenceAtEnds=%.2f maxUtteranceDuration=%.2f" % (minSegmentDuration, minSilenceAtEnds, maxUtteranceDuration))
+                else:
+                    segmentsList.append(segment)
+
+        #print("\n")
+        for index, segment in enumerate(segmentsList):
+            print('Segment %d: start=%.2f end=%.2f span=%.2f bytes=%d duration=%.2f' % (index, segment.timestamp, segment.timestamp + segment.duration, segment.duration, len(segment.bytes), len(segment.audio)/sample_rate))
+            if segment.duration > maxDuration:
+                maxDuration = segment.duration
+            totalSpeechDuration += segment.duration
+            totalNumSegments += 1
+
+        print('Segmenter found total of %d segments with duration %.2fsecs from audio of duration %.2fsecs with max=%.2f -- compression factor: %.2f%%'
+                        % (totalNumSegments, totalSpeechDuration, totalAudioDuration, maxDuration, (100.0*totalSpeechDuration/totalAudioDuration)))
         return segmentsList
+
+#__MAIN__
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--inpath", "-i", type=str, required=True, help="Input Path"
+    )
+    parser.add_argument(
+        "--outpath", "-o", type=str, required=False, help="Output Path"
+    )
+    parser.add_argument(
+        "-v", "--verbosity", type=int, required=False, default=0, help="Verbosity Level ([0]: basic 1: more, 2: high, >=3: debug)"
+    )
+    parser.add_argument(
+        "--vadpower", "-a", type=int, required=False, default=2, help="Aggressiveness of VAD (1: low, [2]: medium, 3: high)"
+    )
+    parser.add_argument(
+        "--framelen", "-l", type=int, required=False, default=30, help="Length of each frame of Audio in msecs [30]"
+    )
+    parser.add_argument(
+        "--winlen", "-w", type=int, required=False, default=20, help="Number of frames in each window for segmentation [20]"
+    )
+    parser.add_argument(
+        "--trfactor", "-f", type=float, required=False, default=0.9, help="threshold for speech/non-speech in buffer to trigger or not; value between 0 and 1 [0.9]"
+    )
+    parser.add_argument(
+        "--runoffdur", "-r", type=float, required=False, default=5.0, help="segment runoff duration in secs; above this the segmenter starts looking for X non-speech frames to break [5.0]"
+    )
+    parser.add_argument(
+        "--maxsegdur", "-m", type=float, required=False, default=30, help="maximum segment duration in secs [30.0]"
+    )
+    parser.add_argument(
+        "--minsildur", "-p", type=float, required=False, default=0.06, help="minimum silence duration in secs at the end of the segment [0.06]"
+    )
+    parser.add_argument(
+        "--minsegdur", "-d", type=float, required=False, default=0, help="minimum segment duration in secs; positive value will trigger second pass [0.0]"
+    )
+
+    args = parser.parse_args()
+
+    InputFileOrFolder = args.inpath
+    outFolder = "./"
+    if args.outpath and os.path.isdir(args.outpath):
+        outFolder = args.outpath
+
+    sampleRate = 16000
+
+    ##define constants
+    aggressiveness = args.vadpower
+    frameDurationMs = args.framelen
+    numFramesInWindow = args.winlen
+    VERBOSITY = args.verbosity
+
+    print(args)
+    #sys.exit(0)
+
+    segmenter = None
+    ## initialize segmenter
+    ## sample rate is assumed to be 16000 and bytes-per-sample is always assumed to be 2 because input is assumed to be WAV
+    ## this assumption can be changed later
+    print('Initializing Audio Segmenter with aggressiveness=%d frame length=%dmsec window size=%dframes and sample rate=%d\n'
+          % (aggressiveness, frameDurationMs, numFramesInWindow, sampleRate))
+    segmenter = AudioSegmenter(aggressiveness, frameDurationMs, numFramesInWindow, sampleRate, 2)
+
+    ## Identify list of audio files to run on
+    audioFilesList = []
+    if(os.path.isfile(InputFileOrFolder)):
+        audioFilesList.append(InputFileOrFolder)
+    elif (os.path.isdir(InputFileOrFolder)):
+        audioFilesList = glob.glob(InputFileOrFolder+'/*.wav')
+    else:
+        raise argparse.ArgumentTypeError('Invalid input: '+InputFileOrFolder)
+
+    if(len(audioFilesList) == 0):
+        raise Exception('No WAV files in input path: %s' % InputFileOrFolder)
+
+    for audioFile in audioFilesList:
+        #read audio file into buffer
+        audio, sample_rate = read_wave(audioFile)
+        assert sample_rate == sampleRate
+
+        sessionId = os.path.basename(audioFile).split('.')[0]
+        print('Processing (%s %dHz %.2fsecs) in file %s' % (sessionId, sample_rate, (len(audio)/(sample_rate * 2)), audioFile))
+
+        ## Run segmenter with following parameters:
+        # threshold for speech/non-speech in buffer to trigger or not = 75%
+        # minimum speech length in utterance = 0.5 secs (below this the segmenter will not break)
+        # utterance runoff duration = 5 secs (above this the segmenter starts looking for X non-speech frames to break)
+        # max duration length = 15 secs (hard-limit ... might cause a break within a word)
+        # minimum number of non-speech frames needed at the end of the utterance to break (X) = 1
+        #segments = segmenter.process(audio, 0.9, 0, 30, 300, 0.2)
+        segments = segmenter.process(audio, args.trfactor, args.minsegdur, args.runoffdur, args.maxsegdur, args.minsildur)
+
+        for index, segment in enumerate(segments):
+            outFileName = "%s/%s_%d_%d.wav" % (outFolder, sessionId, index, (int(segment.timestamp*100)))
+            write_wave(outFileName, segment.bytes, sample_rate)
+
+# p run_segmenter.py --inpath 0.wav --outpath chunks -v 3 -a 3 -l 30 -w 20 -f 0.75 -r 30.0 -m 300 -p 0.3 -d 10

@@ -1,0 +1,30 @@
+pip install numpy requests nlpaug 'librosa>=0.9.1' matplotlib
+
+pip install pydub
+pip install miniaudio
+
+python
+>>> import nlpaug.augmenter.audio as naa
+>>> import librosa
+>>> import librosa.display as librosa_display
+>>> import matplotlib.pyplot as plt
+>>> import miniaudio
+>>> import soundfile as sf
+
+>>> audio_file = '02aaafc27eb54388b270d37fc75f42a4.flac'
+>>> signal, sr = librosa.load(audio_file, sr=None)
+>>> stream = miniaudio.stream_file(audio_file)
+>>> with miniaudio.PlaybackDevice() as device:
+        device.start(stream)
+        input("Audio file playing in the background. Enter to stop playback: ")
+
+>>> aug = naa.PitchAug(sampling_rate=sr, factor=(2,3))
+>>> signal_pitch23 = aug.augment(signal)
+>>> librosa_display.waveshow(signal, sr=sr, alpha=0.5)
+>>> librosa_display.waveshow(signal_pitch23[0], sr=sr, alpha=0.25, color='r')
+>>> plt.tight_layout()
+>>> plt.show()
+
+>>> sf.write('foo.flac', signal_pitch23[0], sr, subtype='PCM_16')
+
+
