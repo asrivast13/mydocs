@@ -291,13 +291,12 @@ fi
 # Test user type:
 if [[ ${USER} == "root" ]]; then
     SU=${Red}           # User is root.
-elif [[ ${USER} != $(logname) ]]; then
+#elif [[ ${USER} != $(logname) ]]; then
+elif [[ ${USER} != ${SUDO_USER:-${USER}} ]]; then
     SU=${BRed}          # User is not login user.
 else
     SU=${BCyan}         # User is normal (well ... most of us are).
 fi
-
-
 
 NCPU=$(grep -c 'processor' /proc/cpuinfo)    # Number of CPUs
 SLOAD=$(( 100*${NCPU} ))        # Small load
@@ -430,7 +429,7 @@ alias clc=clear
 alias wwd='cygpath -w "`pwd`"'
 alias re='source ~/.bashrc'
 alias p='python -u -W ignore '
-alias w2vc='python -u -W ignore C:/cygwin64/home/amisriv/scripts/convW2Vformat.py'
+alias w2vc='python -u -W ignore C:/cygwin64/home/asrivast/scripts/convW2Vformat.py'
 
 #-------------------------------------------------------------
 # The 'ls' family (this assumes you use a recent GNU ls).
@@ -531,10 +530,16 @@ function soffice() { command soffice "$@" & }
 function firefox() { command firefox "$@" & }
 function xpdf() { command xpdf "$@" & }
 
-function em() { emacs -fn '-b&h-lucidatypewriter-bold-r-normal-sans-24-240-75-75-m-140-iso8859-1' -bg black -fg white -g 150x60 "$@" & }
+function em() { 
+	emacs -fn '-b&h-lucidatypewriter-bold-r-normal-sans-24-240-75-75-m-140-iso8859-1' -bg black -fg white -g 150x60 $@
+}
 
 function calc() {
 	perl -e '$_= eval join " ", @ARGV; print "$_\n"' $@
+}
+
+function llf() {
+	cat $@ | tr '\r' '\n' | less
 }
 
 #-------------------------------------------------------------
@@ -1004,22 +1009,31 @@ complete -F _killall killall killps
 
 source ~/.aliasrc
 export PATH="$PATH:$HOME/bin"
-export PATH=/home/amisriv/.local/bin${PATH:+:${PATH}}
+export PATH=/home/asrivast/.local/bin${PATH:+:${PATH}}
+export PATH=/home/asrivast/go/bin${PATH:+:${PATH}}
 export PATH=/usr/local/cuda-10.0/bin${PATH:+:${PATH}}
-export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+export PATH=/home/asrivast/Source/werScoring/SCTK/bin${PATH:+:${PATH}}
+#export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+
 # added by Anaconda3 5.3.1 installer
 # >>> conda init >>>
 # !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$(CONDA_REPORT_ERRORS=false '/home/amisriv/anaconda3/bin/conda' shell.bash hook 2> /dev/null)"
+__conda_setup="$(CONDA_REPORT_ERRORS=false '/home/asrivast/anaconda3/bin/conda' shell.bash hook 2> /dev/null)"
 if [ $? -eq 0 ]; then
     \eval "$__conda_setup"
 else
-    if [ -f "/home/amisriv/anaconda3/etc/profile.d/conda.sh" ]; then
-        . "/home/amisriv/anaconda3/etc/profile.d/conda.sh"
+    if [ -f "/home/asrivast/anaconda3/etc/profile.d/conda.sh" ]; then
+        . "/home/asrivast/anaconda3/etc/profile.d/conda.sh"
         CONDA_CHANGEPS1=false conda activate base
     else
-        \export PATH="/home/amisriv/anaconda3/bin:$PATH"
+        \export PATH="/home/asrivast/anaconda3/bin:$PATH"
     fi
 fi
 unset __conda_setup
 # <<< conda init <<<
+
+PATH="/home/asrivast/perl5/bin${PATH:+:${PATH}}"; export PATH;
+PERL5LIB="/home/asrivast/perl5/lib/perl5${PERL5LIB:+:${PERL5LIB}}"; export PERL5LIB;
+PERL_LOCAL_LIB_ROOT="/home/asrivast/perl5${PERL_LOCAL_LIB_ROOT:+:${PERL_LOCAL_LIB_ROOT}}"; export PERL_LOCAL_LIB_ROOT;
+PERL_MB_OPT="--install_base \"/home/asrivast/perl5\""; export PERL_MB_OPT;
+PERL_MM_OPT="INSTALL_BASE=/home/asrivast/perl5"; export PERL_MM_OPT;

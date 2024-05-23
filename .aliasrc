@@ -27,6 +27,9 @@ function lls() {
 
 alias fls=lls
 
+function clone() {
+	git clone git@github.com:asrivast13/$@.git
+}
 
 function getGettyKeywords() {
 
